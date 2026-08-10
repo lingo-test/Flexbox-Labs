@@ -51,12 +51,13 @@
 ## 部署契约 `.lingo/deployment.json`
 
 - 识别项目后同时维护 `.lingo/deployment.json`；技术栈、目录、依赖、端口或启动方式变化时必须同步更新。
-- 固定格式：`{"schemaVersion":1,"runtime":"npm","port":8080,"applicationStart":"...","applicationStop":"..."}`。`runtime` 必须根据项目实际主运行时填写为 `npm`、`python` 或 `java`，禁止根据期望部署环境臆测；Node.js/npm/pnpm/yarn 项目统一填 `npm`。
+- 固定格式：`{"schemaVersion":1,"runtime":"npm","port":8080,"applicationStart":"...","applicationStop":"..."}`。`runtime` 必须根据项目实际主运行时填写为 `npm`、`python`、`java` 或 `go`，禁止根据期望部署环境臆测；Node.js/npm/pnpm/yarn 项目统一填 `npm`。
 - 生成前先读取 README 和实际项目清单（如 `package.json`、锁文件、`pyproject.toml`、`requirements.txt`），复用项目声明的包管理器、依赖安装、构建和生产启动方式；禁止仅凭文件后缀猜测或无依据改用开发服务器。
 - `.lingo/runtime.json` 与部署契约的进程模型不同：runtime 的 `startCommand` 必须前台常驻；OOS 将 `applicationStart` 作为一次性部署 Hook 执行，长期服务必须后台拉起后正常退出，禁止让服务进程在前台阻塞 Hook。
 - `port` 是云上 HTTP 服务端口，应用必须监听 `0.0.0.0` 和该端口。脚本从 Group 工作目录开始，Git 代码已位于 `code_deploy_application/`；先进入该目录，不要写 Application/Group 相关的绝对目录。
 - ROS/OOS 模板已负责通用部署编排。`applicationStart` 只包含当前项目实际需要的依赖安装、构建和启动命令；除非 README 明确要求，否则不要生成系统运行时安装、系统包管理器探测、旧 PID 清理重试、部署重试或健康轮询。
-- 长期服务使用 `nohup ... >> /root/application.log 2>&1 &` 后立即把 `$!` 写入 `/root/application.pid`，然后正常结束 Hook。`&` 本身已是命令分隔符，后面直接换行或开始下一条命令，禁止写成 `&;`。
+- `applicationStart` 中所有前台步骤（进入目录、安装依赖、构建）必须用 `&&` 串联并成功后再启动服务；禁止把 `nohup`、端口环境变量或启动命令写成 `npm run build` 等构建命令的参数，例如禁止 `npm run build nohup ...`，禁止 `npm run build PORT=8080 nohup ...`。
+- 长期服务必须使用 `cd code_deploy_application && <安装命令> && <构建命令> && { <可选环境变量> nohup <启动命令> >> /root/application.log 2>&1 & echo $! > /root/application.pid; }` 结构，按项目实际需要省略不存在的安装、构建或环境变量步骤；需要 `PORT` 时应写成 `{ PORT=8080 nohup node ... & echo $! > /root/application.pid; }`，禁止写成 `nohup PORT=8080 node ...`。`&` 只能后台化花括号内的服务命令，禁止把进入目录、安装或构建所在的整个 `&&` 链后台化；`$!` 必须记录实际服务进程 PID。`&` 本身已是命令分隔符，禁止写成 `&;`。
 - `applicationStop` 保持简洁且可重复执行：PID 文件存在时按 `/root/application.pid` 停止该应用进程并删除 PID 文件；文件不存在或进程已退出时也应成功。除非项目明确需要，否则不要增加等待循环或强制终止回退，且不得用 `exit` 提前终止部署流程。
 - **任何形式的 `pkill -f` 都被校验器禁止**，即使带进程匹配条件也不允许；同时禁止删除工作目录之外的项目文件、写入凭证，或把 Token/密钥放入契约。
 
