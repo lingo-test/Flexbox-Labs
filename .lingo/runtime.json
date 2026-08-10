@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "projectType": "other",
+  "services": [
+    {
+      "name": "web",
+      "role": "frontend",
+      "cwd": ".",
+      "port": 3001,
+      "startCommand": "npx next dev -H 0.0.0.0 -p 3001",
+      "preview": true
+    }
+  ],
+  "checkCommand": "npm run typecheck"
+}
