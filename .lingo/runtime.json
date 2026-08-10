@@ -7,7 +7,7 @@
       "role": "frontend",
       "cwd": ".",
       "port": 3001,
-      "startCommand": "npx next dev -H 0.0.0.0 -p 3001",
+      "startCommand": "node static-server.js",
       "preview": true
     }
   ],
