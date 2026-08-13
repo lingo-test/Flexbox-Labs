@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
    },
    output: "export", // Outputs a Single-Page Application (SPA).
    distDir: "./dist", // Changes the build output directory to `./dist/`.
+   assetPrefix: "./", // Emit relative asset URLs so the static export works behind any subpath.
 };
 
 export default nextConfig;
