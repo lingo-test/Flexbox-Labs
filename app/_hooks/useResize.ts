@@ -21,6 +21,7 @@ interface ReturnProps {
       event: React.MouseEvent | MouseEvent,
       direction: "horizontal" | "vertical",
    ) => void;
+   resizeBy: (direction: "horizontal" | "vertical", delta: number) => void;
    reset: (direction: "horizontal" | "vertical") => void;
 }
 
@@ -144,6 +145,33 @@ export const useResize = ({
       [ref, minWidth, minHeight, maxDimensions],
    );
 
+   const resizeBy = useCallback(
+      (direction: "horizontal" | "vertical", delta: number) => {
+         if (!ref.current) return;
+
+         if (direction === "horizontal") {
+            const newWidth = Math.max(
+               Math.min(
+                  ref.current.offsetWidth + delta,
+                  Number(maxDimensions.width) || Infinity,
+               ),
+               minWidth,
+            );
+            setDimensions((prev) => ({ ...prev, width: newWidth }));
+         } else {
+            const newHeight = Math.max(
+               Math.min(
+                  ref.current.offsetHeight + delta,
+                  Number(maxDimensions.height) || Infinity,
+               ),
+               minHeight,
+            );
+            setDimensions((prev) => ({ ...prev, height: newHeight }));
+         }
+      },
+      [ref, minWidth, minHeight, maxDimensions],
+   );
+
    const reset = useCallback((direction: "horizontal" | "vertical") => {
       setDimensions((prev) => ({
          ...prev,
@@ -151,5 +179,5 @@ export const useResize = ({
       }));
    }, []);
 
-   return { dimensions, isResizing, startResize, reset };
+   return { dimensions, isResizing, startResize, resizeBy, reset };
 };
